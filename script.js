@@ -5,7 +5,7 @@ const tileSize = 30;
 canvas.width = 600;  // 20 tiles wide
 canvas.height = 450; // 15 tiles tall
 
-// Bigger maze: 0-empty, 1-wall, 2-dot
+// Maze layout: 0-empty, 1-wall, 2-dot
 const maze = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,1,2,2,1],
