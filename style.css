@@ -1,52 +1,36 @@
 body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: Arial, sans-serif;
   background-color: black;
   color: white;
-  margin: 0;
-  padding: 20px;
+  font-family: Arial, sans-serif;
+  text-align: center;
 }
 
-h1 {
-  color: yellow;
-  animation: pulse 1s infinite alternate;
+canvas {
+  display: block;
+  margin: 20px auto;
+  background-color: black;
+  border: 2px solid #0000ff;
 }
 
-.controls {
-  margin: 10px;
-}
-
-button {
+.controls button {
   padding: 10px 20px;
   margin: 5px;
   font-size: 16px;
   cursor: pointer;
-  border-radius: 5px;
-  border: none;
-  background-color: yellow;
-  color: black;
+}
+
+#score {
   font-weight: bold;
+  color: yellow;
 }
 
-button:hover {
-  background-color: orange;
+/* Glow effect for Pac-Man */
+.pacman-glow {
+  filter: drop-shadow(0 0 8px yellow);
 }
 
-.scoreboard {
-  margin: 10px;
-  font-size: 18px;
-}
-
-canvas {
-  border: 3px solid white;
-  margin-top: 20px;
-  background-color: black;
-}
-
-/* CSS animation for Pac-Man title */
-@keyframes pulse {
-  0% { color: yellow; }
-  100% { color: gold; }
-}
+/* Glow effect for ghosts */
+.ghost-glow-red { filter: drop-shadow(0 0 8px red); }
+.ghost-glow-pink { filter: drop-shadow(0 0 8px pink); }
+.ghost-glow-cyan { filter: drop-shadow(0 0 8px cyan); }
+.ghost-glow-orange { filter: drop-shadow(0 0 8px orange); }
