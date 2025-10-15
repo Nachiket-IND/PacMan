@@ -1,178 +1,176 @@
-// ===== PAC-MAN GAME =====
+// ====== Pac-Man Game Script ======
 
 // Canvas setup
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-const tileSize = 24;
-const rows = 20;
-const cols = 21;
-canvas.width = cols * tileSize;
-canvas.height = rows * tileSize;
 
-// Maze layout (0 = wall, 1 = path)
+canvas.width = 560; // 28x20px cells
+canvas.height = 620;
+
+const cellSize = 20;
+let gameStarted = false;
+
+// Maze layout: 0 = empty, 1 = wall, 2 = pellet
 const maze = [
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0],
-  [0,1,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0],
-  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-  [0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0],
-  [0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0],
-  [0,1,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,1,0],
-  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-  [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-  [0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0],
-  [0,1,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,1,0],
-  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+  // Simplified small example: 28x31 array (fill as needed)
+  // 0 = path, 1 = wall, 2 = pellet
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,1,0,0,0,0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0,0,0,0,1,2,1],
+  [1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1],
+  [1,2,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,2,1],
+  [1,2,1,0,1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,2,1],
+  [1,2,1,0,0,0,1,1,0,0,0,2,2,2,2,0,0,1,0,1,1,0,0,0,1,0,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-let pacman = { x: 1, y: 1, dx: 1, dy: 0 };
+// Pac-Man
+let pacman = {
+  x: 1,
+  y: 1,
+  dir: { x: 0, y: 0 },
+  nextDir: { x: 0, y: 0 },
+};
+
+// Ghosts
 let ghosts = [
-  { x: 10, y: 6, color: "red" },
-  { x: 15, y: 10, color: "pink" }
+  { x: 13, y: 5, color: "red", dir: {x:0,y:1} },
+  { x: 14, y: 5, color: "pink", dir: {x:0,y:-1} },
 ];
+
+// Score
 let score = 0;
-let running = false;
 
-// Create dots
-let dots = [];
-for (let y = 0; y < rows; y++) {
-  for (let x = 0; x < cols; x++) {
-    if (maze[y][x] === 1) dots.push({ x, y, eaten: false });
-  }
-}
-
-// Draw maze
+// ====== Functions ======
 function drawMaze() {
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (maze[y][x] === 0) {
-        ctx.fillStyle = "#0033cc";
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+  for (let row = 0; row < maze.length; row++) {
+    for (let col = 0; col < maze[row].length; col++) {
+      if (maze[row][col] === 1) {
+        ctx.fillStyle = "blue";
+        ctx.fillRect(col*cellSize, row*cellSize, cellSize, cellSize);
+      } else if (maze[row][col] === 2) {
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.arc(col*cellSize+cellSize/2, row*cellSize+cellSize/2, 3, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = "black";
+        ctx.fillRect(col*cellSize, row*cellSize, cellSize, cellSize);
       }
     }
   }
 }
 
-// Draw Pac-Man
 function drawPacman() {
+  ctx.fillStyle = "yellow";
   ctx.beginPath();
   ctx.arc(
-    pacman.x * tileSize + tileSize / 2,
-    pacman.y * tileSize + tileSize / 2,
-    tileSize / 2 - 2,
-    0.2 * Math.PI,
-    1.8 * Math.PI
+    pacman.x*cellSize + cellSize/2,
+    pacman.y*cellSize + cellSize/2,
+    cellSize/2 - 2,
+    0,
+    Math.PI*2
   );
-  ctx.lineTo(pacman.x * tileSize + tileSize / 2, pacman.y * tileSize + tileSize / 2);
-  ctx.fillStyle = "yellow";
   ctx.fill();
 }
 
-// Draw ghosts
 function drawGhosts() {
   ghosts.forEach(g => {
+    ctx.fillStyle = g.color;
     ctx.beginPath();
     ctx.arc(
-      g.x * tileSize + tileSize / 2,
-      g.y * tileSize + tileSize / 2,
-      tileSize / 2 - 2,
+      g.x*cellSize + cellSize/2,
+      g.y*cellSize + cellSize/2,
+      cellSize/2 - 2,
       0,
-      Math.PI * 2
+      Math.PI*2
     );
-    ctx.fillStyle = g.color;
     ctx.fill();
   });
 }
 
-// Draw dots
-function drawDots() {
-  ctx.fillStyle = "white";
-  dots.forEach(dot => {
-    if (!dot.eaten) {
-      ctx.beginPath();
-      ctx.arc(
-        dot.x * tileSize + tileSize / 2,
-        dot.y * tileSize + tileSize / 2,
-        3,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
-    }
-  });
-}
-
-// Move Pac-Man
 function movePacman() {
-  let nextX = pacman.x + pacman.dx;
-  let nextY = pacman.y + pacman.dy;
-
-  if (maze[nextY][nextX] !== 0) {
-    pacman.x = nextX;
-    pacman.y = nextY;
+  let nextX = pacman.x + pacman.nextDir.x;
+  let nextY = pacman.y + pacman.nextDir.y;
+  if (maze[nextY] && maze[nextY][nextX] !== 1) {
+    pacman.dir = { ...pacman.nextDir };
+  }
+  let newX = pacman.x + pacman.dir.x;
+  let newY = pacman.y + pacman.dir.y;
+  if (maze[newY] && maze[newY][newX] !== 1) {
+    pacman.x = newX;
+    pacman.y = newY;
   }
 
-  dots.forEach(dot => {
-    if (!dot.eaten && dot.x === pacman.x && dot.y === pacman.y) {
-      dot.eaten = true;
-      score += 10;
-      document.getElementById("score").textContent = score;
-    }
-  });
+  // Eat pellet
+  if (maze[pacman.y][pacman.x] === 2) {
+    maze[pacman.y][pacman.x] = 0;
+    score += 10;
+  }
 }
 
-// Move ghosts
 function moveGhosts() {
   ghosts.forEach(g => {
-    const dir = Math.floor(Math.random() * 4);
-    const moves = [
-      { dx: 1, dy: 0 },
-      { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 },
-      { dx: 0, dy: -1 }
+    // Simple random move
+    let dirs = [
+      {x:0,y:-1}, {x:0,y:1}, {x:-1,y:0}, {x:1,y:0}
     ];
-    const move = moves[dir];
-    const nx = g.x + move.dx;
-    const ny = g.y + move.dy;
-    if (maze[ny][nx] !== 0) {
-      g.x = nx;
-      g.y = ny;
-    }
-
-    if (g.x === pacman.x && g.y === pacman.y) {
-      running = false;
-      alert("💀 Game Over! Final Score: " + score);
-    }
+    let valid = dirs.filter(d => maze[g.y+d.y] && maze[g.y+d.y][g.x+d.x] !== 1);
+    g.dir = valid[Math.floor(Math.random()*valid.length)];
+    g.x += g.dir.x;
+    g.y += g.dir.y;
   });
 }
 
-// Game loop
-function gameLoop() {
-  if (!running) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawMaze();
-  drawDots();
-  movePacman();
-  moveGhosts();
-  drawPacman();
-  drawGhosts();
-  setTimeout(gameLoop, 250); // slower & smoother
+function checkCollision() {
+  for (let g of ghosts) {
+    if (g.x === pacman.x && g.y === pacman.y) {
+      gameStarted = false;
+      alert("Game Over! Score: " + score);
+    }
+  }
 }
 
-// Keyboard control
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, canvas.height - 10);
+}
+
+function gameLoop() {
+  if (!gameStarted) return;
+  movePacman();
+  moveGhosts();
+  checkCollision();
+  drawMaze();
+  drawPacman();
+  drawGhosts();
+  drawScore();
+  requestAnimationFrame(gameLoop);
+}
+
+// ====== Controls ======
 document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") { pacman.dx = 0; pacman.dy = -1; }
-  if (e.key === "ArrowDown") { pacman.dx = 0; pacman.dy = 1; }
-  if (e.key === "ArrowLeft") { pacman.dx = -1; pacman.dy = 0; }
-  if (e.key === "ArrowRight") { pacman.dx = 1; pacman.dy = 0; }
+  if (!gameStarted) return;
+  switch(e.key) {
+    case "ArrowUp": pacman.nextDir = {x:0,y:-1}; break;
+    case "ArrowDown": pacman.nextDir = {x:0,y:1}; break;
+    case "ArrowLeft": pacman.nextDir = {x:-1,y:0}; break;
+    case "ArrowRight": pacman.nextDir = {x:1,y:0}; break;
+  }
 });
 
-// Start & Stop buttons
+// ====== Start Button ======
 document.getElementById("startBtn").addEventListener("click", () => {
-  running = true;
-  gameLoop();
-});
-document.getElementById("stopBtn").addEventListener("click", () => {
-  running = false;
+  if (!gameStarted) {
+    gameStarted = true;
+    pacman = { x:1, y:1, dir:{x:0,y:0}, nextDir:{x:0,y:0} };
+    ghosts = [
+      { x: 13, y: 5, color: "red", dir: {x:0,y:1} },
+      { x: 14, y: 5, color: "pink", dir: {x:0,y:-1} },
+    ];
+    score = 0;
+    gameLoop();
+  }
 });
