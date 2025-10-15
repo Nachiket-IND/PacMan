@@ -2,8 +2,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 const tileSize = 30;
-canvas.width = 600;  // 20 tiles wide
-canvas.height = 450; // 15 tiles tall
+canvas.width = 600;
+canvas.height = 450;
 
 // Maze layout: 0-empty, 1-wall, 2-dot
 const maze = [
@@ -24,10 +24,7 @@ const maze = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-// Pac-Man
 let pacman = { x: 1, y: 1, dx: 0, dy: 0 };
-
-// 4 Ghosts
 let ghosts = [
   { x: 18, y: 1, color: 'red', dx:0, dy:0 },
   { x: 18, y: 3, color: 'pink', dx:0, dy:0 },
@@ -36,8 +33,11 @@ let ghosts = [
 ];
 
 let score = 0;
+let gameRunning = false;
+let gameId;
 
 document.addEventListener('keydown', e => {
+  if(!gameRunning) return;
   if(e.key === 'ArrowUp') { pacman.dx=0; pacman.dy=-1; }
   if(e.key === 'ArrowDown') { pacman.dx=0; pacman.dy=1; }
   if(e.key === 'ArrowLeft') { pacman.dx=-1; pacman.dy=0; }
@@ -54,6 +54,7 @@ function movePacman(){
   if(maze[pacman.y][pacman.x]===2){
     maze[pacman.y][pacman.x]=0;
     score += 10;
+    document.getElementById('score').textContent = score;
   }
 }
 
@@ -110,22 +111,41 @@ function gameLoop(){
   drawPacman();
   drawGhosts();
 
-  ctx.fillStyle='white';
-  ctx.font='20px Arial';
-  ctx.fillText('Score: '+score,10,canvas.height-10);
-
+  // Check collision
   ghosts.forEach(g=>{
     if(g.x===pacman.x && g.y===pacman.y){
       alert('Game Over! Score: '+score);
-      pacman.x=1; pacman.y=1;
-      score=0;
-      for(let y=0;y<maze.length;y++)
-        for(let x=0;x<maze[y].length;x++)
-          if(maze[y][x]===0 && !(y===1 && x===1)) maze[y][x]=2;
+      resetGame();
     }
   });
 
-  requestAnimationFrame(gameLoop);
+  if(gameRunning) gameId = requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+function resetGame(){
+  pacman = { x: 1, y: 1, dx:0, dy:0 };
+  ghosts = [
+    { x: 18, y: 1, color: 'red', dx:0, dy:0 },
+    { x: 18, y: 3, color: 'pink', dx:0, dy:0 },
+    { x: 18, y: 7, color: 'cyan', dx:0, dy:0 },
+    { x: 18, y: 11, color: 'orange', dx:0, dy:0 }
+  ];
+  score = 0;
+  document.getElementById('score').textContent = score;
+  // Reset dots
+  for(let y=0;y<maze.length;y++)
+    for(let x=0;x<maze[y].length;x++)
+      if(maze[y][x]===0 && !(y===1 && x===1)) maze[y][x]=2;
+}
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  if(!gameRunning){
+    gameRunning = true;
+    gameLoop();
+  }
+});
+
+document.getElementById('stopBtn').addEventListener('click', ()=>{
+  gameRunning = false;
+  cancelAnimationFrame(gameId);
+});
