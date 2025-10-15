@@ -24,12 +24,8 @@ canvas {
   color: yellow;
 }
 
-/* Glow effect for Pac-Man */
-.pacman-glow {
-  filter: drop-shadow(0 0 8px yellow);
-}
-
-/* Glow effect for ghosts */
+/* Glow effects */
+.pacman-glow { filter: drop-shadow(0 0 8px yellow); }
 .ghost-glow-red { filter: drop-shadow(0 0 8px red); }
 .ghost-glow-pink { filter: drop-shadow(0 0 8px pink); }
 .ghost-glow-cyan { filter: drop-shadow(0 0 8px cyan); }
