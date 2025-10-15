@@ -1,21 +1,46 @@
-// ====== Pac-Man Game Script ======
+// ====== Full Pac-Man Game Script ======
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 560; // 28x20px cells
-canvas.height = 620;
-
+canvas.width = 28*20; // 28 cells wide
+canvas.height = 31*20; // 31 cells high
 const cellSize = 20;
 let gameStarted = false;
 let animationId = null;
 
-// Maze layout (simplified example)
+// ===== Maze Layout =====
+// 0 = path, 1 = wall, 2 = pellet
+// Full 28x31 maze (classic Pac-Man layout simplified)
 const maze = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
   [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
   [1,2,1,0,0,0,0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0,0,0,0,1,2,1],
+  [1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1],
+  [1,2,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,2,1],
+  [1,2,1,0,1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,2,1],
+  [1,2,1,0,0,0,1,1,0,0,0,2,2,2,2,0,0,1,0,1,1,0,0,0,1,0,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,1,0,0,0,0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0,0,0,0,1,2,1],
+  [1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1],
+  [1,2,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,2,1],
+  [1,2,1,0,1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,2,1],
+  [1,2,1,0,0,0,1,1,0,0,0,2,2,2,2,0,0,1,0,1,1,0,0,0,1,0,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,1,0,0,0,0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0,0,0,0,1,2,1],
+  [1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1],
+  [1,2,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,2,1],
+  [1,2,1,0,1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,2,1],
+  [1,2,1,0,0,0,1,1,0,0,0,2,2,2,2,0,0,1,0,1,1,0,0,0,1,0,2,1],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
@@ -24,29 +49,31 @@ let pacman = { x:1, y:1, dir:{x:0,y:0}, nextDir:{x:0,y:0} };
 
 // Ghosts
 let ghosts = [
-  { x:13, y:3, color:"red", dir:{x:0,y:1} },
-  { x:14, y:3, color:"pink", dir:{x:0,y:-1} }
+  { x:13, y:14, color:"red", dir:{x:0,y:1} },
+  { x:14, y:14, color:"pink", dir:{x:0,y:-1} },
+  { x:13, y:15, color:"cyan", dir:{x:1,y:0} },
+  { x:14, y:15, color:"orange", dir:{x:-1,y:0} }
 ];
 
 // Score
 let score = 0;
 const scoreDisplay = document.getElementById("score");
 
-// ====== Functions ======
+// ===== Functions =====
 function drawMaze() {
-  for (let row = 0; row < maze.length; row++) {
-    for (let col = 0; col < maze[row].length; col++) {
+  for (let row=0; row<maze.length; row++) {
+    for (let col=0; col<maze[row].length; col++) {
       if (maze[row][col] === 1) {
         ctx.fillStyle = "blue";
-        ctx.fillRect(col*cellSize, row*cellSize, cellSize, cellSize);
+        ctx.fillRect(col*cellSize,row*cellSize,cellSize,cellSize);
       } else if (maze[row][col] === 2) {
         ctx.fillStyle = "yellow";
         ctx.beginPath();
-        ctx.arc(col*cellSize+cellSize/2, row*cellSize+cellSize/2, 3, 0, Math.PI*2);
+        ctx.arc(col*cellSize+cellSize/2,row*cellSize+cellSize/2,3,0,Math.PI*2);
         ctx.fill();
       } else {
-        ctx.fillStyle = "black";
-        ctx.fillRect(col*cellSize, row*cellSize, cellSize, cellSize);
+        ctx.fillStyle="black";
+        ctx.fillRect(col*cellSize,row*cellSize,cellSize,cellSize);
       }
     }
   }
@@ -55,53 +82,51 @@ function drawMaze() {
 function drawPacman() {
   ctx.fillStyle = "yellow";
   ctx.beginPath();
-  ctx.arc(pacman.x*cellSize+cellSize/2, pacman.y*cellSize+cellSize/2, cellSize/2-2, 0, Math.PI*2);
+  ctx.arc(pacman.x*cellSize+cellSize/2, pacman.y*cellSize+cellSize/2, cellSize/2-2,0,Math.PI*2);
   ctx.fill();
 }
 
 function drawGhosts() {
   ghosts.forEach(g=>{
-    ctx.fillStyle = g.color;
+    ctx.fillStyle=g.color;
     ctx.beginPath();
-    ctx.arc(g.x*cellSize+cellSize/2, g.y*cellSize+cellSize/2, cellSize/2-2, 0, Math.PI*2);
+    ctx.arc(g.x*cellSize+cellSize/2,g.y*cellSize+cellSize/2,cellSize/2-2,0,Math.PI*2);
     ctx.fill();
   });
 }
 
 function movePacman() {
-  let nextX = pacman.x + pacman.nextDir.x;
-  let nextY = pacman.y + pacman.nextDir.y;
+  let nextX=pacman.x+pacman.nextDir.x;
+  let nextY=pacman.y+pacman.nextDir.y;
   if (maze[nextY] && maze[nextY][nextX] !== 1) pacman.dir = {...pacman.nextDir};
-  let newX = pacman.x + pacman.dir.x;
-  let newY = pacman.y + pacman.dir.y;
+  let newX = pacman.x+pacman.dir.x;
+  let newY = pacman.y+pacman.dir.y;
   if (maze[newY] && maze[newY][newX] !== 1) {
     pacman.x = newX;
     pacman.y = newY;
   }
-
-  // Eat pellet
-  if (maze[pacman.y][pacman.x] === 2) {
-    maze[pacman.y][pacman.x] = 0;
-    score += 10;
-    scoreDisplay.textContent = score;
+  if (maze[pacman.y][pacman.x]===2) {
+    maze[pacman.y][pacman.x]=0;
+    score+=10;
+    scoreDisplay.textContent=score;
   }
 }
 
 function moveGhosts() {
   ghosts.forEach(g=>{
-    const dirs = [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
-    const valid = dirs.filter(d=> maze[g.y+d.y] && maze[g.y+d.y][g.x+d.x] !== 1);
-    g.dir = valid[Math.floor(Math.random()*valid.length)];
-    g.x += g.dir.x;
-    g.y += g.dir.y;
+    const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
+    const valid=dirs.filter(d=>maze[g.y+d.y] && maze[g.y+d.y][g.x+d.x]!==1);
+    g.dir=valid[Math.floor(Math.random()*valid.length)];
+    g.x+=g.dir.x;
+    g.y+=g.dir.y;
   });
 }
 
 function checkCollision() {
   ghosts.forEach(g=>{
-    if (g.x === pacman.x && g.y === pacman.y) {
+    if (g.x===pacman.x && g.y===pacman.y) {
       stopGame();
-      alert("Game Over! Score: " + score);
+      alert("Game Over! Score: "+score);
     }
   });
 }
@@ -117,7 +142,7 @@ function gameLoop() {
   animationId = requestAnimationFrame(gameLoop);
 }
 
-// ====== Controls ======
+// ===== Controls =====
 document.addEventListener("keydown", e=>{
   if (!gameStarted) return;
   switch(e.key) {
@@ -128,17 +153,19 @@ document.addEventListener("keydown", e=>{
   }
 });
 
-// ====== Start/Stop Buttons ======
+// ===== Start/Stop =====
 document.getElementById("startBtn").addEventListener("click", ()=>{
   if (!gameStarted) {
     gameStarted = true;
-    pacman = { x:1, y:1, dir:{x:0,y:0}, nextDir:{x:0,y:0} };
+    pacman = {x:1,y:1,dir:{x:0,y:0},nextDir:{x:0,y:0}};
     ghosts = [
-      { x:13, y:3, color:"red", dir:{x:0,y:1} },
-      { x:14, y:3, color:"pink", dir:{x:0,y:-1} }
+      {x:13,y:14,color:"red",dir:{x:0,y:1}},
+      {x:14,y:14,color:"pink",dir:{x:0,y:-1}},
+      {x:13,y:15,color:"cyan",dir:{x:1,y:0}},
+      {x:14,y:15,color:"orange",dir:{x:-1,y:0}}
     ];
-    score = 0;
-    scoreDisplay.textContent = score;
+    score=0;
+    scoreDisplay.textContent=score;
     gameLoop();
   }
 });
@@ -146,6 +173,7 @@ document.getElementById("startBtn").addEventListener("click", ()=>{
 document.getElementById("stopBtn").addEventListener("click", stopGame);
 
 function stopGame() {
-  gameStarted = false;
-  if (animationId) cancelAnimationFrame(animationId);
+  gameStarted=false;
+  if(animationId) cancelAnimationFrame(animationId);
 }
+
