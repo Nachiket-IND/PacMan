@@ -1,17 +1,16 @@
 // ====== Full Pac-Man Game Script ======
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 28*20; // 28 cells wide
-canvas.height = 31*20; // 31 cells high
+canvas.width = 28 * 20;
+canvas.height = 31 * 20;
 const cellSize = 20;
+
 let gameStarted = false;
 let animationId = null;
 
 // ===== Maze Layout =====
 // 0 = path, 1 = wall, 2 = pellet
-// Full 28x31 maze (classic Pac-Man layout simplified)
 const maze = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
@@ -59,15 +58,19 @@ let ghosts = [
 let score = 0;
 const scoreDisplay = document.getElementById("score");
 
+// Pac-Man mouth animation
+let pacmanMouth = 0;
+let mouthOpening = true;
+
 // ===== Functions =====
 function drawMaze() {
-  for (let row=0; row<maze.length; row++) {
-    for (let col=0; col<maze[row].length; col++) {
-      if (maze[row][col] === 1) {
-        ctx.fillStyle = "blue";
+  for(let row=0; row<maze.length; row++){
+    for(let col=0; col<maze[row].length; col++){
+      if(maze[row][col]===1){
+        ctx.fillStyle="blue";
         ctx.fillRect(col*cellSize,row*cellSize,cellSize,cellSize);
-      } else if (maze[row][col] === 2) {
-        ctx.fillStyle = "yellow";
+      } else if(maze[row][col]===2){
+        ctx.fillStyle="yellow";
         ctx.beginPath();
         ctx.arc(col*cellSize+cellSize/2,row*cellSize+cellSize/2,3,0,Math.PI*2);
         ctx.fill();
@@ -79,10 +82,21 @@ function drawMaze() {
   }
 }
 
+function animatePacmanMouth() {
+  if(mouthOpening) pacmanMouth += 0.05;
+  else pacmanMouth -= 0.05;
+  if(pacmanMouth >=1) mouthOpening=false;
+  if(pacmanMouth <=0) mouthOpening=true;
+}
+
 function drawPacman() {
-  ctx.fillStyle = "yellow";
+  ctx.fillStyle="yellow";
+  let startAngle = 0.25*Math.PI*pacmanMouth;
+  let endAngle = 2*Math.PI-0.25*Math.PI*pacmanMouth;
   ctx.beginPath();
-  ctx.arc(pacman.x*cellSize+cellSize/2, pacman.y*cellSize+cellSize/2, cellSize/2-2,0,Math.PI*2);
+  ctx.moveTo(pacman.x*cellSize+cellSize/2,pacman.y*cellSize+cellSize/2);
+  ctx.arc(pacman.x*cellSize+cellSize/2,pacman.y*cellSize+cellSize/2,cellSize/2-2,startAngle,endAngle);
+  ctx.closePath();
   ctx.fill();
 }
 
@@ -95,24 +109,24 @@ function drawGhosts() {
   });
 }
 
-function movePacman() {
-  let nextX=pacman.x+pacman.nextDir.x;
-  let nextY=pacman.y+pacman.nextDir.y;
-  if (maze[nextY] && maze[nextY][nextX] !== 1) pacman.dir = {...pacman.nextDir};
-  let newX = pacman.x+pacman.dir.x;
-  let newY = pacman.y+pacman.dir.y;
-  if (maze[newY] && maze[newY][newX] !== 1) {
-    pacman.x = newX;
-    pacman.y = newY;
+function movePacman(){
+  let nextX = pacman.x + pacman.nextDir.x;
+  let nextY = pacman.y + pacman.nextDir.y;
+  if(maze[nextY] && maze[nextY][nextX]!==1) pacman.dir={...pacman.nextDir};
+  let newX=pacman.x+pacman.dir.x;
+  let newY=pacman.y+pacman.dir.y;
+  if(maze[newY] && maze[newY][newX]!==1){
+    pacman.x=newX;
+    pacman.y=newY;
   }
-  if (maze[pacman.y][pacman.x]===2) {
+  if(maze[pacman.y][pacman.x]===2){
     maze[pacman.y][pacman.x]=0;
     score+=10;
     scoreDisplay.textContent=score;
   }
 }
 
-function moveGhosts() {
+function moveGhosts(){
   ghosts.forEach(g=>{
     const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
     const valid=dirs.filter(d=>maze[g.y+d.y] && maze[g.y+d.y][g.x+d.x]!==1);
@@ -122,30 +136,31 @@ function moveGhosts() {
   });
 }
 
-function checkCollision() {
+function checkCollision(){
   ghosts.forEach(g=>{
-    if (g.x===pacman.x && g.y===pacman.y) {
+    if(g.x===pacman.x && g.y===pacman.y){
       stopGame();
       alert("Game Over! Score: "+score);
     }
   });
 }
 
-function gameLoop() {
-  if (!gameStarted) return;
+function gameLoop(){
+  if(!gameStarted) return;
   movePacman();
   moveGhosts();
   checkCollision();
   drawMaze();
+  animatePacmanMouth();
   drawPacman();
   drawGhosts();
-  animationId = requestAnimationFrame(gameLoop);
+  animationId=requestAnimationFrame(gameLoop);
 }
 
 // ===== Controls =====
 document.addEventListener("keydown", e=>{
-  if (!gameStarted) return;
-  switch(e.key) {
+  if(!gameStarted) return;
+  switch(e.key){
     case "ArrowUp": pacman.nextDir={x:0,y:-1}; break;
     case "ArrowDown": pacman.nextDir={x:0,y:1}; break;
     case "ArrowLeft": pacman.nextDir={x:-1,y:0}; break;
@@ -153,12 +168,12 @@ document.addEventListener("keydown", e=>{
   }
 });
 
-// ===== Start/Stop =====
+// ===== Start/Stop Buttons =====
 document.getElementById("startBtn").addEventListener("click", ()=>{
-  if (!gameStarted) {
-    gameStarted = true;
-    pacman = {x:1,y:1,dir:{x:0,y:0},nextDir:{x:0,y:0}};
-    ghosts = [
+  if(!gameStarted){
+    gameStarted=true;
+    pacman={x:1,y:1,dir:{x:0,y:0},nextDir:{x:0,y:0}};
+    ghosts=[
       {x:13,y:14,color:"red",dir:{x:0,y:1}},
       {x:14,y:14,color:"pink",dir:{x:0,y:-1}},
       {x:13,y:15,color:"cyan",dir:{x:1,y:0}},
@@ -172,8 +187,7 @@ document.getElementById("startBtn").addEventListener("click", ()=>{
 
 document.getElementById("stopBtn").addEventListener("click", stopGame);
 
-function stopGame() {
+function stopGame(){
   gameStarted=false;
   if(animationId) cancelAnimationFrame(animationId);
 }
-
